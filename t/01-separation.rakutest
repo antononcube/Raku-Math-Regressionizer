@@ -1,0 +1,43 @@
+use v6.d;
+use Math::Regressionizer;
+use COIN-OR;
+use Test;
+
+# CBC is normally found through the Linux dynamic linker. For a nonstandard
+# installation, set COIN_OR_CBC_LIBRARY to the full libCbcSolver path.
+my $has-cbc = try { cbc-version.defined } // False;
+unless $has-cbc {
+    plan :skip-all('CBC is unavailable; install libCbcSolver or configure COIN_OR_CBC_LIBRARY.');
+    exit;
+}
+
+sub chebyshev(UInt:D $n --> Callable:D) {
+    -> $x { $n == 0 ?? 1 !! $n == 1 ?? $x !! (2 * $x * chebyshev($n - 1)($x) - chebyshev($n - 2)($x)) }
+}
+
+my @x = (^400).map(* * 2 / 399);
+my @data = @x.map(-> $x { [$x, sin(2 * pi * $x) + 0.4 * sin(37 * $x)] }).Array;
+my @probabilities = 0.2, 0.5, 0.8;
+
+subtest 'B-spline quantile regression separates expected fractions' => {
+    my %fractions = Math::Regressionizer.new(@data)
+        .quantile-regression(knots => 10, probs => @probabilities)
+        .separate(cumulative => True, fractions => True)
+        .take-value;
+    for @probabilities -> $probability {
+        is-approx %fractions{$probability}, $probability, "fraction below quantile $probability", :abs-tol(0.025);
+    }
+};
+
+subtest 'basis-function quantile regression separates expected fractions' => {
+    my @functions = (^8).map({ chebyshev($_) }).Array;
+    my %fractions = Math::Regressionizer.new(@data)
+        .quantile-regression-fit(@functions, probs => @probabilities)
+        .separate(cumulative => True, fractions => True)
+        .take-value;
+    for @probabilities -> $probability {
+        is-approx %fractions{$probability}, $probability, "fraction below quantile $probability", :abs-tol(0.025);
+    }
+};
+
+done-testing;
