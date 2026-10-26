@@ -72,13 +72,14 @@ Compute quantile regression for probabilities `[0.2, 0.5, 0.8]` and make the cor
 
 ```raku
 #% html
-my $obj = Math::Regressionizer(@data)
-       .quantile-regression(knots => 8, probs => [0.2, 0.5, 0.8])
-       .plot(title => "B-splines fit", template => "dark", format => 'html')
+my $obj = 
+  Math::Regressionizer.new(@data)
+  .quantile-regression(knots => 8, probs => [0.2, 0.5, 0.8])
+  .plot(title => "B-splines fit", template => "dark", format => 'html')
 ```
 
-**Remark** If the code cell above is executed in a Jupyter notebook with a Raku kernel then plot is shown.
-"Math::Regressionizer" uses the package "JavaScript::Google::Charts" for its plots.
+**Remark** If the code cell above is executed in a Jupyter notebook with a Raku kernel then the plot is shown.
+"Math::Regressionizer" uses the package ["JavaScript::Google::Charts"](https://github.com/antononcube/Raku-JavaScript-Google-Charts) for its plots.
 
 Export the plot obtained above:
 
