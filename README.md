@@ -115,12 +115,12 @@ Cambridge University Press, 2005.
 [CRAN](https://cran.r-project.org/).
 
 [AAp1] Anton Antonov,
-[Quantile Regression WL paclet](https://github.com/antononcube/WL-QuantileRegression-paclet),
+[Quantile Regression, WL paclet](https://github.com/antononcube/WL-QuantileRegression-paclet),
 (2014-2023),
 [GitHub/antononcube](https://github.com/antononcube).
 
 [AAp2] Anton Antonov,
-[Monadic Quantile Regression WL paclet](https://github.com/antononcube/WL-MonadicQuantileRegression-paclet),
+[Monadic Quantile Regression, WL paclet](https://github.com/antononcube/WL-MonadicQuantileRegression-paclet),
 (2018-2024),
 [GitHub/antononcube](https://github.com/antononcube).
 
@@ -132,7 +132,7 @@ Cambridge University Press, 2005.
 ### Repositories
 
 [AAr1] Anton Antonov,
-[DSL::English::QuantileRegressionWorkflows in Raku](https://github.com/antononcube/Raku-DSL-English-QuantileRegressionWorkflows),
+[DSL::English::QuantileRegressionWorkflows, Raku package](https://github.com/antononcube/Raku-DSL-English-QuantileRegressionWorkflows),
 (2020),
 [GitHub/antononcube](https://github.com/antononcube/Raku-DSL-English-QuantileRegressionWorkflows).
 
