@@ -1,0 +1,34 @@
+{
+    "name": "Math::Regressionizer",
+    "description": "A package for rapid specification of Quantile Regression workflows.",
+    "version": "0.0.1",
+    "authors": [
+        "Anton Antonov"
+    ],
+    "auth": "zef:antononcube",
+    "depends": [
+        "Data::Transformers:ver<0.0.4>",
+        "Math::Splines:ver<0.0.2+>",
+        "Math::Polynomial::Chebyshev:ver<0.0.2>",
+        "Math::QuantileRegression:ver<0.0.1+>",
+        "Statistics::OutlierIdentifiers",
+        "JavaScript::Google::Charts"
+    ],
+    "build-depends": [],
+    "provides": {
+        "Math::Regressionizer": "lib/Math/Regressionizer.rakumod"
+    },
+    "license": "Artistic-2.0",
+    "tags": [
+        "quantile-regression",
+        "quantile",
+        "regression",
+        "b-splines",
+        "splines",
+        "chebyshev",
+        "chebyshev-polynomials",
+        "linear-programming"
+    ],
+    "api": "0",
+    "source-url": "https://github.com/antononcube/Raku-Math-Regressionizer.git"
+}
