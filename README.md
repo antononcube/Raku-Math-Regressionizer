@@ -71,13 +71,16 @@ my @data = @x Z @y;
 Compute quantile regression for probabilities `[0.2, 0.5, 0.8]` and make the corresponding plot:
 
 ```raku
+#% html
 my $obj = Math::Regressionizer(@data)
        .quantile-regression(knots => 8, probs => [0.2, 0.5, 0.8])
        .plot(title => "B-splines fit", template => "dark", format => 'html')
-       )
 ```
 
-Show/export the plot obtained above:
+**Remark** If the code cell above is executed in a Jupyter notebook with a Raku kernel then plot is shown.
+"Math::Regressionizer" uses the package "JavaScript::Google::Charts" for its plots.
+
+Export the plot obtained above:
 
 ```raku
 spurt('qr-plot.html', $obj.take-value)
@@ -144,3 +147,8 @@ Cambridge University Press, 2005.
 ["useR! 2020: How to simplify Machine Learning workflows specifications"](https://www.youtube.com/watch?v=b9Uu7gRF5KY),
 (2020),
 [R Consortium at YouTube](https://www.youtube.com/channel/UC_R5smHVXRYGhZYDJsnXTwg).
+
+[AAv3] Anton Antonov,
+["Quantile Regression Workflows (PyData Global 2024)"](https://www.youtube.com/watch?v=mYXCynTPHsA),
+(2025),
+[Anton Antonov at YouTube](https://www.youtube.com/@AAA4Prediction).
