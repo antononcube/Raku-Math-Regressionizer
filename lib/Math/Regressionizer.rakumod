@@ -405,6 +405,109 @@ method date-list-plot(*%args) {
     return self.plot(:date-plot, |%args)
 }
 
+#| Outliers plot
+method outliers-plot(
+        :$title = 'Regression',      #= Plot title.
+        Bool:D :$date-plot = False,  #= Whether to make a date plot or not.
+        Numeric:D :$date-offset = 0, #= Use 2208988800 for epoch start at 1900-01-01 instead of 1970-01-01.
+        :$data-color = 'Gray',       #= Color of the data points.
+        Int:D :$width = 800,         #= Width of the plot.
+        Int:D :$height = 600,        #= Height of the plot.
+        :$format = 'html',           #= Format, one of 'html' or 'jupyter'.
+        *%options,                   #= Additional options.
+                     ) {
+
+    my &bottom-func = %!regression-quantiles.sort(*.key.Num).head.value;
+    my &top-func = %!regression-quantiles.sort(*.key.Num).tail.value;
+    # Get the bottom and top outliers
+    my @wide-data = @!data.kv.map(-> $i, @point {
+        %(
+            x => $date-plot ?? DateTime.new(Instant.from-posix(@point.head - $date-offset)) !! @point.head,
+            data => @point.tail,
+            bottom => bottom-func(@point.head),
+            top => top-func(@point.head),
+            bottom-outlier => bottom-func(@point.head) > @point.tail ?? @point.tail !! Nil,
+            top-outlier => top-func(@point.head) < @point.tail ?? @point.tail !! Nil,
+        )
+    }).Array;
+
+    my @field-names = <x data bottom top bottom-outlier top-outlier>;
+    my @column-names = ['x', 'data', 'bottom regression quantile', 'top regression quantile', 'bottom outlier', 'top outlier'];
+
+    # Plot
+    $!value = js-google-charts('Scatter',
+            @wide-data.map(*{|@field-names}),
+            :@column-names,
+            :$title,
+            series => {
+                0 => {color => $data-color, pointSize => 2, title => 'data'},
+                1 => {color => 'LightBlue', type => 'line', lineWidth => 2, pointSize => 0},
+                2 => {color => 'Pink', type => 'line', lineWidth => 2, pointSize => 0},
+                3 => {color => 'DodgerBlue', pointSize => 3},
+                4 => {color => 'Red', pointSize => 3},
+            },
+            legend => {
+                position => 'right',
+                textStyle => {
+                    color => 'Gray',
+                    fontSize => 12
+                }
+            },
+            :$format,
+            :$width,
+            :$height,
+            |%options);
+
+    return self
+}
+
+#| Errors plot
+method error-plots(
+        :$title = 'Regression',              #= Plot title.
+        Str:D :type($plot-type) = 'Scatter', #= Plot type; one of "Scatter" or 'Line'.
+        Bool:D :$date-plot = False,          #= Whether to make a date plot or not.
+        Numeric:D :$date-offset = 0,         #= Use 2208988800 for epoch start at 1900-01-01 instead of 1970-01-01.
+        Int:D :$width = 800,                 #= Width of the plot.
+        Int:D :$height = 600,                #= Height of the plot.
+        :$format = 'html',                   #= Format, one of 'html' or 'jupyter'.
+        *%options,                           #= Additional options.
+                    ) {
+    # Check plot type
+    die 'The value $plot-type is expected to be one "Line" or "Scatter".' unless $plot-type ∈ <Line Scatter>;
+
+    # Compute errors
+    self.errors;
+
+    # Modify options
+    my %opts = %options.grep(*.key ∉ <title div-id>);
+
+    # In order to handle plot, a copy of the errors is made.
+    my %errors = self.take-value.clone;
+
+    # Modify x-axis
+    if $date-plot {
+        %errors = %errors.kv.map( -> $prob, @points { $prob => @points.map({ [DateTime.new(Instant.from-posix($_.head - $date-offset)), $_.tail] }).Array });
+    }
+
+    # Plots
+    my @res =
+            %errors.sort(*.key).map({
+                js-google-charts($plot-type,
+                        $_.value,
+                        title => (%options<title> // "Errors of the regression quantile at") ~ " " ~ $_.key,
+                        column-names => ['x', $_.key],
+                        :$width,
+                        :$height,
+                        :$format,
+                        |%opts,
+                        div-id => "{%options<div-id> // 'errors'}-{ $_.key }")
+            });
+
+    $!value = @res;
+
+    return self
+}
+
 #==========================================================
 # Representation
 #==========================================================
