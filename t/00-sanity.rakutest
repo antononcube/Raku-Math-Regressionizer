@@ -1,0 +1,14 @@
+use v6.d;
+use Math::Regressionizer;
+use Test;
+
+
+my @data = 10.rand xx 100;
+
+# 1
+isa-ok Math::Regressionizer.new(@data), Math::Regressionizer:D, 'ok to create';
+
+# 2
+ok Math::Regressionizer.new(@data).gist, 'ok to gist';
+
+done-testing;
