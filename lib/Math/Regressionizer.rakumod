@@ -367,21 +367,67 @@ method conditional-cdf($points --> ::?CLASS:D) {
 proto method simulate($points) {*}
 
 multi method simulate(Int:D $points) {
-    die 'If the firs argument is an integers then it is expected to be larger than 1.' unless $points > 1;
-    # This is for 2D data only
-    my $min = @!data.map(*.head).min;
-    my $max = @!data.map(*.head).max;
-    my @points = $min, $min + ($max - $min) / ($points - 1) ... $max;
-    return self.simulate(@points)
+    die 'An integer point count must be larger than one.' unless $points > 1;
+
+    # The stored data is always normalized to predictor-response pairs.
+    my $minimum = @!data.map(*[0]).min;
+    my $maximum = @!data.map(*[0]).max;
+    my @simulation-points = (^$points).map({
+        $minimum + ($maximum - $minimum) * $_ / ($points - 1)
+    }).Array;
+    self.simulate(@simulation-points)
 }
 
-multi method simulate(@points) {
+multi method simulate(Positional:D $points --> ::?CLASS:D) {
+    my @points = $points.List;
+    die 'Simulation points must be a non-empty positional collection of numbers.'
+        unless @points.elems && @points.all ~~ Numeric:D;
 
-    die 'Compute two or more regression quantiles first.' unless !%!regression-quantiles.elems > 1;
+    # A least-squares fit can add the non-numeric key "mean".  
+    # Simulation is defined by ordered regression quantiles only.
+    my @probabilities = %!regression-quantiles.keys.grep(* ne 'mean').map(*.Num).sort;
 
-    die 'Not implemented yet';
+    die 'Compute at least two numeric regression quantiles first.'
+    unless @probabilities.elems >= 2;
 
-    return self
+    my @result;
+    for @points -> $point {
+        my @quantile-values = @probabilities.map(
+            -> $probability { %!regression-quantiles{$probability.Str}($point) }
+        ).Array;
+
+        die 'Regression quantiles must evaluate to numeric values.'
+        unless @quantile-values.all ~~ Numeric:D;
+
+        # Select an adjacent quantile interval with probability proportional
+        # to its width, then sample uniformly within that selected interval.
+        my @weights = (^@quantile-values.end).map(
+            -> $index { abs(@quantile-values[$index + 1] - @quantile-values[$index]) }
+        ).Array;
+        my $total-weight = [+] @weights;
+        
+        die 'Regression quantiles have zero total width at a simulation point.'
+        unless $total-weight > 0;
+
+        my $cutoff = rand * $total-weight;
+        my $interval = @weights.end;
+        my $cumulative-weight = 0e0;
+        for @weights.kv -> $index, $weight {
+            $cumulative-weight += $weight;
+            if $cutoff < $cumulative-weight {
+                $interval = $index;
+                last;
+            }
+        }
+
+        my $lower = @quantile-values[$interval];
+        my $upper = @quantile-values[$interval + 1];
+        @result.push([$point, $lower + rand * ($upper - $lower)]);
+    }
+
+    $!value = @result.Array;
+
+    self
 }
 
 
@@ -439,8 +485,8 @@ method outliers-plot(
         *%options,                   #= Additional options.
                      ) {
 
-    my &bottom-func = %!regression-quantiles.sort(*.key.Num).head.value;
-    my &top-func = %!regression-quantiles.sort(*.key.Num).tail.value;
+    my &bottom-func = %!regression-quantiles.grep(*.key ne 'mean').sort(*.key.Num).head.value;
+    my &top-func = %!regression-quantiles.grep(*.key ne 'mean').sort(*.key.Num).tail.value;
     # Get the bottom and top outliers
     my @wide-data = @!data.kv.map(-> $i, @point {
         %(

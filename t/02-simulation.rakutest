@@ -1,0 +1,37 @@
+use v6.d;
+use Math::Regressionizer;
+use COIN-OR;
+use Test;
+
+# CBC is normally found through the Linux dynamic linker. For a nonstandard
+# installation, set COIN_OR_CBC_LIBRARY to the full libCbcSolver path.
+my $has-cbc = try { cbc-version.defined } // False;
+unless $has-cbc {
+    plan :skip-all('CBC is unavailable; install libCbcSolver or configure COIN_OR_CBC_LIBRARY.');
+    exit;
+}
+
+
+subtest 'simulate samples from adjacent regression-quantile intervals' => {
+    my %quantiles =
+        0.2 => -> $x { $x },
+        0.5 => -> $x { $x + 2 },
+        0.8 => -> $x { $x + 5 };
+    my $regressionizer = Math::Regressionizer.new([[2, 0], [6, 0]]).set-regression-quantiles(%quantiles);
+
+    srand(73);
+    my $samples = $regressionizer.simulate([2, 4, 6]).take-value;
+    is $samples.elems, 3, 'one simulated response is produced for every explicit point';
+    is-deeply $samples.map(*[0]).Array, [2, 4, 6], 'explicit simulation predictors are preserved';
+    ok $samples.grep(-> $sample { $sample[0] <= $sample[1] <= $sample[0] + 5 }).elems == $samples.elems,
+        'each simulated response falls within the outer quantile interval';
+
+    srand(73);
+    my $even-samples = $regressionizer.simulate(3).take-value;
+    for $even-samples.kv -> $index, $sample {
+        is-approx $sample[0], [2e0, 4e0, 6e0][$index],
+            "integer simulation point $index is evenly spaced over the data range";
+    }
+};
+
+done-testing;
