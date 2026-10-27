@@ -30,7 +30,7 @@ multi method new($data) {
 #==========================================================
 
 method !probabilities($probs --> Array:D) {
-    my @probs = $probs.defined ?? ($probs ~~ Positional:D ?? $probs.list !! [$probs]) !! [0.25, 0.5, 0.75];
+    my @probs = $probs.defined ?? ($probs ~~ Positional:D ?? $probs.List !! [$probs]) !! [0.25, 0.5, 0.75];
     die 'Probabilities must be numeric values between zero and one.'
     unless @probs.elems && @probs.all ~~ Numeric:D && @probs.all >= 0 && @probs.all <= 1;
     return @probs.Array
@@ -50,13 +50,13 @@ method set-data($data --> ::?CLASS:D) {
 
     @!data = ();
     if $data[0] ~~ Numeric:D {
-        for $data.list.kv -> $index, $value {
+        for $data.List.kv -> $index, $value {
             die 'A response vector must contain only numeric values.' unless $value ~~ Numeric:D;
             @!data.push([$index, $value]);
         }
     }
     else {
-        for $data.list -> $row {
+        for $data.List -> $row {
             die 'Data rows must have at least two numeric values.'
             unless $row ~~ Positional:D && $row.elems >= 2
                     && $row[0] ~~ Numeric:D && $row[1] ~~ Numeric:D;
@@ -73,7 +73,7 @@ method set-basis-functions($functions --> ::?CLASS:D) {
     die 'Basis functions must be a non-empty positional collection of callables.'
     unless $functions ~~ Positional:D && $functions.elems && $functions.all ~~ Callable:D;
 
-    @!basis-functions = $functions.list;
+    @!basis-functions = $functions.List;
 
     return self
 }
@@ -249,7 +249,7 @@ method fit($functions --> ::?CLASS:D) { self.least-squares-fit($functions) }
 #| Evaluate the regression quantiles at given points
 method evaluate($points --> ::?CLASS:D) {
     self!require-quantiles;
-    my @points = $points ~~ Numeric:D ?? [$points] !! $points.list;
+    my @points = $points ~~ Numeric:D ?? [$points,] !! $points.List;
     die 'Evaluation points must be numeric.' unless @points.all ~~ Numeric:D;
     my %values;
     for %!regression-quantiles.kv -> $probability, &fit {
@@ -341,7 +341,7 @@ method outliers(--> ::?CLASS:D) {
 #| Compute conditional CDF
 method conditional-cdf($points --> ::?CLASS:D) {
     self!require-quantiles;
-    my @points = $points ~~ Numeric:D ?? [$points] !! $points.list;
+    my @points = $points ~~ Numeric:D ?? [$points,] !! $points.List;
 
     my @probabilities = %!regression-quantiles.keys.grep(* ne 'mean').map(*.Num).sort;
     die 'At least two numeric regression quantiles are required.' unless @probabilities.elems >= 2;
@@ -353,8 +353,8 @@ method conditional-cdf($points --> ::?CLASS:D) {
             return @pairs.tail[1] if $value >= @pairs.tail[0];
             for ^@pairs.end -> $i {
                 next unless @pairs[$i][0] <= $value <= @pairs[$i + 1][0];
-                my ($x1, $p1) = @pairs[$i].list;
-                my ($x2, $p2) = @pairs[$i + 1].list;
+                my ($x1, $p1) = @pairs[$i].List;
+                my ($x2, $p2) = @pairs[$i + 1].List;
                 return $x2 == $x1 ?? $p1 !! $p1 + ($value - $x1) * ($p2 - $p1) / ($x2 - $x1);
             }
         }
@@ -362,6 +362,28 @@ method conditional-cdf($points --> ::?CLASS:D) {
 
     return self
 }
+
+#| Simulate signal
+proto method simulate($points) {*}
+
+multi method simulate(Int:D $points) {
+    die 'If the firs argument is an integers then it is expected to be larger than 1.' unless $points > 1;
+    # This is for 2D data only
+    my $min = @!data.map(*.head).min;
+    my $max = @!data.map(*.head).max;
+    my @points = $min, $min + ($max - $min) / ($points - 1) ... $max;
+    return self.simulate(@points)
+}
+
+multi method simulate(@points) {
+
+    die 'Compute two or more regression quantiles first.' unless !%!regression-quantiles.elems > 1;
+
+    die 'Not implemented yet';
+
+    return self
+}
+
 
 #==========================================================
 # Plots
