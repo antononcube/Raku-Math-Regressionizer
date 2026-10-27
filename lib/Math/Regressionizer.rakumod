@@ -15,11 +15,19 @@ has @!basis-functions;
 has %!regression-quantiles;
 has $!value;
 
+#==========================================================
+# Creators
+#==========================================================
+
 multi method new($data) {
     my $object = self.bless;
     $object.set-data($data);
     $object
 }
+
+#==========================================================
+# Verifiers
+#==========================================================
 
 method !probabilities($probs --> Array:D) {
     my @probs = $probs.defined ?? ($probs ~~ Positional:D ?? $probs.list !! [$probs]) !! [0.25, 0.5, 0.75];
@@ -31,6 +39,10 @@ method !probabilities($probs --> Array:D) {
 method !require-quantiles() {
     die 'Cannot find regression functions; compute a regression first.' unless %!regression-quantiles.elems;
 }
+
+#==========================================================
+# Setters / takers
+#==========================================================
 
 method set-data($data --> ::?CLASS:D) {
     die 'Data must be a non-empty positional collection.'
@@ -89,6 +101,10 @@ method take-value() { $!value }
 #| Echo the argument
 method echo($message --> ::?CLASS:D) { say $message; self }
 
+#==========================================================
+# Summarization
+#==========================================================
+
 #| Data summary
 method data-summary(--> ::?CLASS:D) {
     sub percentile(@values, Numeric:D $probability) {
@@ -124,6 +140,10 @@ method echo-data-summary(Bool :$echo = True --> ::?CLASS:D) {
     return self
 }
 
+#==========================================================
+# Rescale
+#==========================================================
+
 #| Rescale the data
 method rescale(Bool :$regressor = False, Bool :$value = True --> ::?CLASS:D) {
     for ($regressor, $value).kv -> $column, $enabled {
@@ -137,6 +157,10 @@ method rescale(Bool :$regressor = False, Bool :$value = True --> ::?CLASS:D) {
 
     return self
 }
+
+#==========================================================
+# Quantile regression
+#==========================================================
 
 #| Compute a Quantile Regression fit with a given basis of functions
 method quantile-regression-fit($functions, :$probs, :$probabilities, *%options --> ::?CLASS:D) {
@@ -167,6 +191,10 @@ multi method quantile-regression(:$knots, :probs(:$probabilities), :order(:$inte
     $!value = %!regression-quantiles.Hash;
     return self
 }
+
+#==========================================================
+# Least Squares
+#==========================================================
 
 method !solve(@matrix, @vector --> Array:D) {
     my @augmented = @matrix.kv.map(-> $row, @values { [|@values, @vector[$row]].Array }).Array;
@@ -213,6 +241,10 @@ method least-squares-fit($functions --> ::?CLASS:D) {
 
 #| Synonym of least-squares-fit
 method fit($functions --> ::?CLASS:D) { self.least-squares-fit($functions) }
+
+#==========================================================
+# Workflow methods
+#==========================================================
 
 #| Evaluate the regression quantiles at given points
 method evaluate($points --> ::?CLASS:D) {
@@ -331,6 +363,10 @@ method conditional-cdf($points --> ::?CLASS:D) {
     return self
 }
 
+#==========================================================
+# Plots
+#==========================================================
+
 #| Plot data and regression quantiles
 method plot(
         :$title = 'Regression',      #= Plot title.
@@ -367,4 +403,31 @@ method plot(
 #| Plot data and regression quantiles using date horizontal axis
 method date-list-plot(*%args) {
     return self.plot(:date-plot, |%args)
+}
+
+#==========================================================
+# Representation
+#==========================================================
+
+method Str(::?CLASS:D:-->Str) {
+    self.gist
+}
+
+multi method Hash(::?CLASS:D:-->Map:D) {
+    my %h =
+            :@!data,
+            :@!basis-functions,
+            :%!regression-quantiles,
+            :$!value
+            ;
+    return %h
+}
+
+multi method gist(::?CLASS:D:-->Str) {
+    'Math::Regressionizer(' ~
+            ' data => ' ~ @!data.elems ~ ' points'~
+            ', basis-functions => ' ~ @!basis-functions.elems ~ ' count'~
+            ', regression-quantiles => ' ~ (%!regression-quantiles ?? 'at (' ~ (%!regression-quantiles.keys.sort).join(', ') ~ ')' !! '()') ~
+            ', value => ' ~ ($!value.defined ?? $!value.WHAT.raku !! $!value.raku) ~
+            ')'
 }
