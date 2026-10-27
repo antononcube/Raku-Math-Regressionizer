@@ -261,7 +261,7 @@ method evaluate($points --> ::?CLASS:D) {
 }
 
 #| Pick data points using regression quantiles as references
-method pick-path-points(Numeric:D $threshold, Bool :$pick-above-threshold = False, Bool :$relative-errors = False --> ::?CLASS:D) {
+method pick-path-points(Numeric:D :$threshold, Bool :$pick-above-threshold = False, Bool :$relative-errors = False --> ::?CLASS:D) {
     die 'The threshold must be non-negative.' if $threshold < 0;
     self!require-quantiles;
     my %points;
