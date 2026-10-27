@@ -316,9 +316,9 @@ method errors(Bool :$relative-errors = False --> ::?CLASS:D) {
     return self
 }
 
-#| Find anomalies by residusals
+#| Find anomalies by residuals
 method find-anomalies-by-residuals(Numeric :$threshold!, Bool :$relative-errors = False --> ::?CLASS:D) {
-    self.pick-path-points($threshold, :pick-above-threshold, :$relative-errors);
+    self.pick-path-points(:$threshold, :pick-above-threshold, :$relative-errors);
     $!value = $!value.values.head.Array;
 
     return self
