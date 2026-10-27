@@ -13,6 +13,6 @@ This Markdown file shows how Python's "Regressionizer" is used to make Quantile 
 
 I have also installed that Python package, so, you can consult it.
 
-Make the Raku tess corresponding to this file:
+Make the Raku tests corresponding to this file:
 "https://github.com/antononcube/Python-Regressionizer/blob/main/tests/01-separation.py" .
 ```
