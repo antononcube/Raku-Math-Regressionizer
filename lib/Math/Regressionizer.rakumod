@@ -348,7 +348,7 @@ method conditional-cdf($points --> ::?CLASS:D) {
 
     $!value = @points.map(-> $point {
         my @pairs = @probabilities.map({ [%!regression-quantiles{$_.Str}($point), $_] }).sort(*[0]);
-        $point => -> $value {
+        $point => sub ($value) {
             return @pairs.head[1] if $value <= @pairs.head[0];
             return @pairs.tail[1] if $value >= @pairs.tail[0];
             for ^@pairs.end -> $i {
