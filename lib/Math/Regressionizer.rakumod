@@ -8,8 +8,8 @@ use JavaScript::Google::Charts;
 my &core-quantile-regression = &quantile-regression;
 my &core-quantile-regression-fit = &quantile-regression-fit;
 
-# A small, stateful façade over Math::QuantileRegression.  Methods return the
-# invocant so that a regression workflow can be written as a pipeline.
+# A small, stateful façade over Math::QuantileRegression.
+# Methods return the invocant so that a regression workflow can be written as a pipeline.
 has @!data;
 has @!basis-functions;
 has %!regression-quantiles;
@@ -24,8 +24,8 @@ multi method new($data) {
 method !probabilities($probs --> Array:D) {
     my @probs = $probs.defined ?? ($probs ~~ Positional:D ?? $probs.list !! [$probs]) !! [0.25, 0.5, 0.75];
     die 'Probabilities must be numeric values between zero and one.'
-        unless @probs.elems && @probs.all ~~ Numeric:D && @probs.all >= 0 && @probs.all <= 1;
-    @probs.Array
+    unless @probs.elems && @probs.all ~~ Numeric:D && @probs.all >= 0 && @probs.all <= 1;
+    return @probs.Array
 }
 
 method !require-quantiles() {
@@ -34,7 +34,7 @@ method !require-quantiles() {
 
 method set-data($data --> ::?CLASS:D) {
     die 'Data must be a non-empty positional collection.'
-        unless $data ~~ Positional:D && $data.elems;
+    unless $data ~~ Positional:D && $data.elems;
 
     @!data = ();
     if $data[0] ~~ Numeric:D {
@@ -46,30 +46,35 @@ method set-data($data --> ::?CLASS:D) {
     else {
         for $data.list -> $row {
             die 'Data rows must have at least two numeric values.'
-                unless $row ~~ Positional:D && $row.elems >= 2
+            unless $row ~~ Positional:D && $row.elems >= 2
                     && $row[0] ~~ Numeric:D && $row[1] ~~ Numeric:D;
             @!data.push([$row[0], $row[1]]);
         }
     }
-    self
+
+    return self
 }
 
 method take-data(--> Array:D) { @!data.Array }
 
 method set-basis-functions($functions --> ::?CLASS:D) {
     die 'Basis functions must be a non-empty positional collection of callables.'
-        unless $functions ~~ Positional:D && $functions.elems && $functions.all ~~ Callable:D;
+    unless $functions ~~ Positional:D && $functions.elems && $functions.all ~~ Callable:D;
+
     @!basis-functions = $functions.list;
-    self
+
+    return self
 }
 
 method take-basis-functions(--> Array:D) { @!basis-functions.Array }
 
 method set-regression-quantiles(%quantiles --> ::?CLASS:D) {
     die 'Regression quantiles must be a non-empty hash of callables.'
-        unless %quantiles.elems && %quantiles.values.all ~~ Callable:D;
+    unless %quantiles.elems && %quantiles.values.all ~~ Callable:D;
+
     %!regression-quantiles = %quantiles;
-    self
+
+    return self
 }
 
 #| Take the regression quantile functions
@@ -102,7 +107,8 @@ method data-summary(--> ::?CLASS:D) {
         };
     }
     $!value = %summary;
-    self
+
+    return self
 }
 
 #| Echo data summary
@@ -114,7 +120,8 @@ method echo-data-summary(Bool :$echo = True --> ::?CLASS:D) {
             say "$statistic\t" ~ %($!value)<regressor>{$statistic} ~ ' | ' ~ %($!value)<value>{$statistic};
         }
     }
-    self
+
+    return self
 }
 
 #| Rescale the data
@@ -127,7 +134,8 @@ method rescale(Bool :$regressor = False, Bool :$value = True --> ::?CLASS:D) {
         die 'Cannot rescale a constant data column.' if $range == 0;
         @!data[$_][$column] = (@!data[$_][$column] - $minimum) / $range for ^@!data.elems;
     }
-    self
+
+    return self
 }
 
 #| Compute a Quantile Regression fit with a given basis of functions
@@ -139,24 +147,25 @@ method quantile-regression-fit($functions, :$probs, :$probabilities, *%options -
     );
     %!regression-quantiles = @probs Z=> @fits;
     $!value = %!regression-quantiles.Hash;
-    self
+
+    return self
 }
 
 #| Compute a Quantile Regression fit with a B-spline basis
-multi method quantile-regression(:$knots!, *%options --> ::?CLASS:D) {
-    self.quantile-regression($knots, |%options)
+multi method quantile-regression($knots, $probabilities = Whatever, *%options --> ::?CLASS:D) {
+    return self.quantile-regression(:$knots, :$probabilities, |%options)
 }
 
 #| Compute a Quantile Regression fit with a B-spline basis
-multi method quantile-regression($knots, :$probs, :$probabilities, :$order, :$interpolation-order, *%options --> ::?CLASS:D) {
-    my @probs = self!probabilities($probabilities // $probs);
-    my $spline-order = $interpolation-order // $order // 3;
+multi method quantile-regression(:$knots, :probs(:$probabilities), :order(:$interpolation-order), *%options --> ::?CLASS:D) {
+    my @probs = self!probabilities($probabilities);
+    my $spline-order = $interpolation-order // 3;
     my @fits = core-quantile-regression(
         @!data, :$knots, :probabilities(@probs), :interpolation-order($spline-order), |%options
     );
     %!regression-quantiles = @probs Z=> @fits;
     $!value = %!regression-quantiles.Hash;
-    self
+    return self
 }
 
 method !solve(@matrix, @vector --> Array:D) {
@@ -176,7 +185,7 @@ method !solve(@matrix, @vector --> Array:D) {
             @augmented[$row] »-=» (@augmented[$pivot] »*» $factor);
         }
     }
-    @augmented.map(*.tail).Array
+    return @augmented.map(*.tail).Array
 }
 
 #| Compute a Least Squares fit with a given basis of funcitons
@@ -198,7 +207,8 @@ method least-squares-fit($functions --> ::?CLASS:D) {
     my @coefficients = self!solve(@normal, @right);
     %!regression-quantiles<mean> = -> $x { [+] @coefficients.kv.map(-> $i, $coefficient { $coefficient * @!basis-functions[$i]($x) }) };
     $!value = %!regression-quantiles.Hash;
-    self
+
+    return self
 }
 
 #| Synonym of least-squares-fit
@@ -214,7 +224,8 @@ method evaluate($points --> ::?CLASS:D) {
         %values{$probability} = @points.map(&fit).Array;
     }
     $!value = %values;
-    self
+
+    return self
 }
 
 #| Pick data points using regression quantiles as references
@@ -230,7 +241,8 @@ method pick-path-points(Numeric:D $threshold, Bool :$pick-above-threshold = Fals
         }).Array;
     }
     $!value = %points;
-    self
+
+    return self
 }
 
 #| Separate the data points using the regression quantiles
@@ -252,7 +264,8 @@ method separate(Bool :$cumulative = True, Bool :$fractions = False --> ::?CLASS:
     else {
         $!value = %groups;
     }
-    self
+
+    return self
 }
 
 #| Compute fitting errors (residuals) per regression quantile
@@ -267,14 +280,16 @@ method errors(Bool :$relative-errors = False --> ::?CLASS:D) {
         }).Array;
     }
     $!value = %errors;
-    self
+
+    return self
 }
 
 #| Find anomalies by residusals
 method find-anomalies-by-residuals(Numeric :$threshold!, Bool :$relative-errors = False --> ::?CLASS:D) {
     self.pick-path-points($threshold, :pick-above-threshold, :$relative-errors);
     $!value = $!value.values.head.Array;
-    self
+
+    return self
 }
 
 #| Find outliers
@@ -287,15 +302,18 @@ method outliers(--> ::?CLASS:D) {
         bottom => @!data.grep({ .[1] < bottom(.[0]) }).Array,
         top => @!data.grep({ .[1] > top(.[0]) }).Array,
     };
-    self
+
+    return self
 }
 
 #| Compute conditional CDF
 method conditional-cdf($points --> ::?CLASS:D) {
     self!require-quantiles;
     my @points = $points ~~ Numeric:D ?? [$points] !! $points.list;
+
     my @probabilities = %!regression-quantiles.keys.grep(* ne 'mean').map(*.Num).sort;
     die 'At least two numeric regression quantiles are required.' unless @probabilities.elems >= 2;
+
     $!value = @points.map(-> $point {
         my @pairs = @probabilities.map({ [%!regression-quantiles{$_.Str}($point), $_] }).sort(*[0]);
         $point => -> $value {
@@ -309,17 +327,44 @@ method conditional-cdf($points --> ::?CLASS:D) {
             }
         }
     }).Hash;
-    self
+
+    return self
 }
 
 #| Plot data and regression quantiles
-method plot(:$title = 'Regression', Int:D :$width = 800, Int:D :$height = 600, :$format = 'html', *%options --> ::?CLASS:D) {
+method plot(
+        :$title = 'Regression',      #= Plot title.
+        Bool:D :$date-plot = False,  #= Whether to make a date plot or not.
+        Numeric:D :$date-offset = 0, #= Use 2208988800 for epoch start at 1900-01-01 instead of 1970-01-01.
+        :$data-color = 'Gray',       #= Color of the data points.
+        Int:D :$width = 800,         #= Width of the plot.
+        Int:D :$height = 600,        #= Height of the plot.
+        :$format = 'html',           #= Format, one of 'html' or 'jupyter'.
+        *%options,                   #= Additional options.
+        --> ::?CLASS:D) {
+
     self!require-quantiles;
+
     my @names = 'x', 'data', |%!regression-quantiles.keys.sort;
     my @records = @!data.map(-> $row {
-        (@names Z=> [$row[0], $row[1], |%!regression-quantiles.keys.sort.map({ %!regression-quantiles{$_}($row[0]) })]).Hash
+        my $x2 = $date-plot ?? DateTime.new(Instant.from-posix($row[0] - $date-offset)) !! $row[0];
+        (@names Z=> [$x2, $row[1], |%!regression-quantiles.keys.sort.map({ %!regression-quantiles{$_}($row[0]) })]).Hash
     }).Array;
-    $!value = js-google-charts('Combo', @records, column-names => @names, :$title, :$width, :$height, :$format,
-        seriesType => 'line', series => { 0 => { type => 'scatter', pointSize => 3, lineWidth => 0 } }, |%options);
-    self
+
+    $!value = js-google-charts('Combo',
+            @records,
+            column-names => @names,
+            :$title,
+            :$width, :$height,
+            :$format,
+            seriesType => 'line',
+            series => { 0 => { type => 'scatter', color => $data-color, pointSize => 3, lineWidth => 0 } },
+            |%options);
+
+    return self
+}
+
+#| Plot data and regression quantiles using date horizontal axis
+method date-list-plot(*%args) {
+    return self.plot(:date-plot, |%args)
 }
