@@ -4,4 +4,8 @@
 # precompiled files
 .precomp
 lib/.precomp
-
+.idea
+.iml
+.log
+.ipynb_checkpoints
+.DS_Store
