@@ -381,7 +381,7 @@ multi method simulate(Int:D $points) {
 multi method simulate(Positional:D $points --> ::?CLASS:D) {
     my @points = $points.List;
     die 'Simulation points must be a non-empty positional collection of numbers.'
-        unless @points.elems && @points.all ~~ Numeric:D;
+    unless @points.elems && @points.all ~~ Numeric:D;
 
     # A least-squares fit can add the non-numeric key "mean".  
     # Simulation is defined by ordered regression quantiles only.
@@ -569,6 +569,56 @@ method error-plots(
                         :$format,
                         |%opts,
                         div-id => "{%options<div-id> // 'errors'}-{ $_.key }")
+            });
+
+    $!value = @res;
+
+    return self
+}
+
+multi method conditional-cdf-plot($point, *%args) {
+    return self.conditional-cdf-plot([$point, ], |%args)
+}
+
+#| Conditional CDF plot(s)
+multi method conditional-cdf-plot(
+        @points,
+        :$title = '',              #= Plot title.
+        Int:D :$width = 800,       #= Width of the plot.
+        Int:D :$height = 600,      #= Height of the plot.
+        :$format = 'html',         #= Format, one of 'html' or 'jupyter'.
+        *%options,                 #= Additional options.
+                    ) {
+    die 'A number or a list of numbers is expected as first argument.' unless @points.all ~~ Numeric:D;
+
+    my @probabilities = %!regression-quantiles.keys.grep(* ne 'mean').map(*.Num).sort;
+
+    die 'Compute at least two numeric regression quantiles first.'
+    unless @probabilities.elems >= 2;
+
+    my @q-funcs = %!regression-quantiles{|@probabilities};
+
+    # For each point compute the its conditional CDF
+    my %cdfs = do for @points -> $p { 
+        my @q-func-values = @q-funcs.kv.map(-> $i, &f { [&f($p), @probabilities[$i]] });
+        $p => @q-func-values
+    }
+
+    # Modify options
+    my %opts = %options.grep(*.key ∉ <title div-id>);
+
+    # Plots
+    my @res =
+            %cdfs.map({
+                js-google-charts('Line',
+                        $_.value,
+                        title => (%options<title> // "Conditional CDF at") ~ " " ~ $_.key,
+                        column-names => ['x', $_.key],
+                        :$width,
+                        :$height,
+                        :$format,
+                        |%opts,
+                        div-id => "{%options<div-id> // 'cdfs'}-{ $_.key }")
             });
 
     $!value = @res;
