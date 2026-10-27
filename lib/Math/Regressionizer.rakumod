@@ -576,12 +576,13 @@ method error-plots(
     return self
 }
 
-multi method conditional-cdf-plot($point, *%args) {
+#| Conditional CDF plot(s)
+multi method conditional-cdf-plots($point, *%args) {
     return self.conditional-cdf-plot([$point, ], |%args)
 }
 
 #| Conditional CDF plot(s)
-multi method conditional-cdf-plot(
+multi method conditional-cdf-plots(
         @points,
         :$title = '',              #= Plot title.
         Int:D :$width = 800,       #= Width of the plot.
