@@ -3,6 +3,7 @@ use v6.d;
 unit class Math::Regressionizer;
 
 use Math::QuantileRegression;
+use Math::Polynomial::Chebyshev;
 use JavaScript::Google::Charts;
 
 my &core-quantile-regression = &quantile-regression;
@@ -163,9 +164,32 @@ method rescale(Bool :$regressor = False, Bool :$value = True --> ::?CLASS:D) {
 #==========================================================
 
 #| Compute a Quantile Regression fit with a given basis of functions
-method quantile-regression-fit($functions, :$probs, :$probabilities, *%options --> ::?CLASS:D) {
+proto method quantile-regression-fit($functions, :probs(:$probabilities) = Whatever, | --> ::?CLASS:D) {*}
+
+multi method quantile-regression-fit(
+        UInt:D $n,                             #= Number of basis Chebyshev-T polynomials.
+        :probs(:$probabilities) = Whatever,    #= Probabilities.
+        :@run-range = [-0.95, 0.95],           #= Run range for the basis Chebyshev-T polynomials (defined on [-1, 1]).
+        Bool:D :trig(:$trigonometric) = True,  #= Whether to use the trigonometric method of computation of the Chebyshev-T polynomials or not.
+        *%options,                             #= Additional options to pass the core quantile regression fit sub.
+        --> ::?CLASS:D) {
+
+    my ($min, $max) = @!data.map(*.head).cache.&{ [$_.min, $_.max] };
+    my ($mid, $length) = ($max + $min) / 2, $max - $min;
+    my $factor = @run-range.tail - @run-range.head;
+    my $cheb-method =  $trigonometric ?? 'trigonometric' !! 'recursive';
+    my @basis = (^$n).map(-> $order { -> $x { chebyshev-t($order, ($x - $mid) / $length * $factor, method => $cheb-method) } });
+
+    return self.quantile-regression-fit(@basis, :$probabilities, |%options)
+}
+
+multi method quantile-regression-fit(
+        $functions,                          #= Basis functions to fit with.
+        :probs(:$probabilities) = Whatever,  #= Probabilities.
+        *%options                            #= Additional options to pass the core quantile regression fit sub.
+        --> ::?CLASS:D) {
     self.set-basis-functions($functions);
-    my @probs = self!probabilities($probabilities // $probs);
+    my @probs = self!probabilities($probabilities);
     my @fits = core-quantile-regression-fit(
         @!data, :basis(@!basis-functions), :probabilities(@probs), |%options
     );
