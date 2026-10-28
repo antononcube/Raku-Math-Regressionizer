@@ -208,15 +208,27 @@ multi method quantile-regression-fit(
 #| Compute a Quantile Regression fit with a B-spline basis
 proto method quantile-regression(| --> ::?CLASS:D) {*}
 
-multi method quantile-regression($knots, $probabilities = Whatever, *%options --> ::?CLASS:D) {
+multi method quantile-regression(
+        $knots,                     #| B-spline knots spec, an integer or a list of points.
+        $probabilities = Whatever,  #| Probabilities to fit regression quantiles for.
+        *%options,                  #| Additional options.
+        --> ::?CLASS:D) {
     return self.quantile-regression(:$knots, :$probabilities, |%options)
 }
 
-multi method quantile-regression($knots, :probs(:$probabilities) = Whatever, *%options --> ::?CLASS:D) {
-    return self.quantile-regression(:$knots, :$probabilities, |%options)
+multi method quantile-regression(
+        $knots,                              #| B-spline knots spec, an integer or a list of points.
+        *%options                            #| Additional options.
+        --> ::?CLASS:D) {
+    return self.quantile-regression(:$knots, |%options)
 }
 
-multi method quantile-regression(:$knots, :probs(:$probabilities), :order(:$interpolation-order), *%options --> ::?CLASS:D) {
+multi method quantile-regression(
+        :$knots,                            #| B-spline knots spec, an integer or a list of points.
+        :probs(:$probabilities) = Whatever, #| Probabilities to fit regression quantiles for.
+        :order(:$interpolation-order),      #| B-spline interpolation order.
+        *%options,                          #| Additional options.
+        --> ::?CLASS:D) {
     my @probs = self!probabilities($probabilities);
     my $spline-order = $interpolation-order // 3;
     my @fits = core-quantile-regression(
