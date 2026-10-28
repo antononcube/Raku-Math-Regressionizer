@@ -1,4 +1,7 @@
 Changes of the Raku package "Math::Regressionizer"
 
+0.0.2 2026-10-28
+    - Using default Chebyshev-T polynomials basis if the first argument of method quantile-regression-fit is an integer
+
 0.0.1 2026-10-27
     - First version
