@@ -1,5 +1,9 @@
 Changes of the Raku package "Math::Regressionizer"
 
+0.0.3 2026-10-28
+    - Extended the signature of method quantile-regression.
+    - Method plot can take specifications for plotting data as scatter points, as line, or as a line with points
+
 0.0.2 2026-10-28
     - Using default Chebyshev-T polynomials basis if the first argument of method quantile-regression-fit is an integer
 
