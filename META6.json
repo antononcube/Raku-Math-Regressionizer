@@ -1,7 +1,7 @@
 {
     "name": "Math::Regressionizer",
     "description": "A package for rapid specification of Quantile Regression workflows.",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "authors": [
         "Anton Antonov"
     ],
