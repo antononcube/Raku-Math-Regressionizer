@@ -3,7 +3,7 @@
 Raku package with a class that allows pipeline-like specification and execution of regression workflows.
 
 Extensive guide is given in the Jupyter notebook 
-["Rapid-specification-of-regression-workflows.ipynb"](https://github.com/antononcube/Raku-Math-Regressionizer/blob/main/docs/Rapid-specification-of-regression-workflows.ipynb) 
+["Rapid-specification-of-regression-workflows.ipynb"](https://github.com/antononcube/Raku-Math-Regressionizer/blob/main/docs/Rapid-specification-of-regression-workflows.ipynb)
 and the corresponding Markdown document
 ["Rapid-specification-of-regression-workflows.md"](https://github.com/antononcube/Raku-Math-Regressionizer/blob/main/docs/Rapid-specification-of-regression-workflows.md).
 
