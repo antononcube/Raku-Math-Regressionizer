@@ -160,7 +160,7 @@ method rescale(Bool :$regressor = False, Bool :$value = True --> ::?CLASS:D) {
 }
 
 #==========================================================
-# Quantile regression
+# Quantile regression fit
 #==========================================================
 
 #| Compute a Quantile Regression fit with a given basis of functions
@@ -173,6 +173,8 @@ multi method quantile-regression-fit(
         Bool:D :trig(:$trigonometric) = True,  #= Whether to use the trigonometric method of computation of the Chebyshev-T polynomials or not.
         *%options,                             #= Additional options to pass the core quantile regression fit sub.
         --> ::?CLASS:D) {
+
+    die 'If the first argument is an integer then is expected to be positive.' unless $n > 0;
 
     my ($min, $max) = @!data.map(*.head).cache.&{ [$_.min, $_.max] };
     my ($mid, $length) = ($max + $min) / 2, $max - $min;
@@ -198,6 +200,10 @@ multi method quantile-regression-fit(
 
     return self
 }
+
+#==========================================================
+# Quantile regression (B-splines)
+#==========================================================
 
 #| Compute a Quantile Regression fit with a B-spline basis
 multi method quantile-regression($knots, $probabilities = Whatever, *%options --> ::?CLASS:D) {
