@@ -206,11 +206,16 @@ multi method quantile-regression-fit(
 #==========================================================
 
 #| Compute a Quantile Regression fit with a B-spline basis
+proto method quantile-regression(| --> ::?CLASS:D) {*}
+
 multi method quantile-regression($knots, $probabilities = Whatever, *%options --> ::?CLASS:D) {
     return self.quantile-regression(:$knots, :$probabilities, |%options)
 }
 
-#| Compute a Quantile Regression fit with a B-spline basis
+multi method quantile-regression($knots, :probs(:$probabilities) = Whatever, *%options --> ::?CLASS:D) {
+    return self.quantile-regression(:$knots, :$probabilities, |%options)
+}
+
 multi method quantile-regression(:$knots, :probs(:$probabilities), :order(:$interpolation-order), *%options --> ::?CLASS:D) {
     my @probs = self!probabilities($probabilities);
     my $spline-order = $interpolation-order // 3;
@@ -471,6 +476,7 @@ method plot(
         Bool:D :$date-plot = False,  #= Whether to make a date plot or not.
         Numeric:D :$date-offset = 0, #= Use 2208988800 for epoch start at 1900-01-01 instead of 1970-01-01.
         :$data-color = 'Gray',       #= Color of the data points.
+        Bool:D :$data-line = False,  #= Whether to plot the data as a line or not.
         Int:D :$width = 800,         #= Width of the plot.
         Int:D :$height = 600,        #= Height of the plot.
         :$format = 'html',           #= Format, one of 'html' or 'jupyter'.
@@ -492,7 +498,12 @@ method plot(
             :$width, :$height,
             :$format,
             seriesType => 'line',
-            series => { 0 => { type => 'scatter', color => $data-color, pointSize => 3, lineWidth => 0 } },
+            series => {
+                0 =>
+                        $data-line
+                        ?? { type => 'line', color => $data-color, pointSize => %options<data-point-size> // %options<dataPointSize> // 0, lineWidth => %options<data-line-width> // %options<dataLineWidth> // 2 }
+                        !! { type => 'scatter', color => $data-color, pointSize => %options<data-point-size> // %options<dataPointSize> // 3, lineWidth => 0 }
+            },
             |%options);
 
     return self
