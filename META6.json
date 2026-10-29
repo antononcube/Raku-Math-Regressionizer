@@ -7,10 +7,10 @@
     ],
     "auth": "zef:antononcube",
     "depends": [
-        "Data::Transformers:ver<0.0.4>",
+        "Data::Transformers:ver<0.0.4+>",
         "Math::Splines:ver<0.0.2+>",
-        "Math::Polynomial::Chebyshev:ver<0.0.2>",
-        "Math::QuantileRegression:ver<0.0.3+>",
+        "Math::Polynomial::Chebyshev:ver<0.0.2+>",
+        "Math::QuantileRegression:ver<0.0.4+>",
         "Statistics::OutlierIdentifiers",
         "JavaScript::Google::Charts"
     ],
