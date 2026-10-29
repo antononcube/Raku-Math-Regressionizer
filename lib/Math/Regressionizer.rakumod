@@ -482,18 +482,33 @@ multi method simulate(Positional:D $points --> ::?CLASS:D) {
 # Plots
 #==========================================================
 
+sub get-date-offset($spec) {
+    my $reference = DateTime.new('1970-01-01');
+    given $spec {
+        when Whatever { $reference }
+        when $_ ~~ Str:D { $reference - DateTime.new($_) }
+        when $_ ~~ DateTime:D { $reference - $_ }
+        when $_ ~~ Int:D { $_ }
+        default {
+            die 'The epoch-start spec is expected to be a DateTime object, a date-time string, an integer, or Whatever.'
+        }
+    }
+}
+
 #| Plot data and regression quantiles
 method plot(
-        :$title = 'Regression',      #= Plot title.
-        Bool:D :$date-plot = False,  #= Whether to make a date plot or not.
-        Numeric:D :$date-offset = 0, #= Use 2208988800 for epoch start at 1900-01-01 instead of 1970-01-01.
-        :$data-color = 'Gray',       #= Color of the data points.
-        Bool:D :$data-line = False,  #= Whether to plot the data as a line or not.
-        Int:D :$width = 800,         #= Width of the plot.
-        Int:D :$height = 600,        #= Height of the plot.
-        :$format = 'html',           #= Format, one of 'html' or 'jupyter'.
-        *%options,                   #= Additional options.
+        :$title = 'Regression',     #= Plot title.
+        Bool:D :$date-plot = False, #= Whether to make a date plot or not.
+        :$epoch-start = Whatever,   #= A DateTime object, a date string, an integer, or Whatever (corresponds to DateTime.new('1970-01-01')).
+        :$data-color = 'Gray',      #= Color of the data points.
+        Bool:D :$data-line = False, #= Whether to plot the data as a line or not.
+        Int:D :$width = 800,        #= Width of the plot.
+        Int:D :$height = 600,       #= Height of the plot.
+        :$format = 'html',          #= Format, one of 'html' or 'jupyter'.
+        *%options,                  #= Additional options.
         --> ::?CLASS:D) {
+
+    my $date-offset = get-date-offset($epoch-start);
 
     self!require-quantiles;
 
@@ -530,13 +545,14 @@ method date-list-plot(*%args) {
 method outliers-plot(
         :$title = 'Regression',      #= Plot title.
         Bool:D :$date-plot = False,  #= Whether to make a date plot or not.
-        Numeric:D :$date-offset = 0, #= Use 2208988800 for epoch start at 1900-01-01 instead of 1970-01-01.
+        :$epoch-start = Whatever,    #= A DateTime object, a date string, an integer, or Whatever (corresponds to DateTime.new('1970-01-01')).
         :$data-color = 'Gray',       #= Color of the data points.
         Int:D :$width = 800,         #= Width of the plot.
         Int:D :$height = 600,        #= Height of the plot.
         :$format = 'html',           #= Format, one of 'html' or 'jupyter'.
         *%options,                   #= Additional options.
                      ) {
+    my $date-offset = get-date-offset($epoch-start);
 
     my &bottom-func = %!regression-quantiles.grep(*.key ne 'mean').sort(*.key.Num).head.value;
     my &top-func = %!regression-quantiles.grep(*.key ne 'mean').sort(*.key.Num).tail.value;
@@ -587,12 +603,14 @@ method error-plots(
         :$title = 'Regression',              #= Plot title.
         Str:D :type($plot-type) = 'Scatter', #= Plot type; one of "Scatter" or 'Line'.
         Bool:D :$date-plot = False,          #= Whether to make a date plot or not.
-        Numeric:D :$date-offset = 0,         #= Use 2208988800 for epoch start at 1900-01-01 instead of 1970-01-01.
+        :$epoch-start = Whatever,            #= A DateTime object, a date string, an integer, or Whatever (corresponds to DateTime.new('1970-01-01')).
         Int:D :$width = 800,                 #= Width of the plot.
         Int:D :$height = 600,                #= Height of the plot.
         :$format = 'html',                   #= Format, one of 'html' or 'jupyter'.
         *%options,                           #= Additional options.
                     ) {
+    my $date-offset = get-date-offset($epoch-start);
+
     # Check plot type
     die 'The value $plot-type is expected to be one "Line" or "Scatter".' unless $plot-type ∈ <Line Scatter>;
 
