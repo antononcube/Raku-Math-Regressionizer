@@ -1,5 +1,8 @@
 Changes of the Raku package "Math::Regressionizer"
 
+0.0.4 2026-11-23
+    - Added method echo-value; both echo and echo-value have :&with option.
+
 0.0.3 2026-10-29
     - Extended the signature of method quantile-regression.
     - Method plot can take specifications for plotting data as scatter points, as line, or as a line with points
