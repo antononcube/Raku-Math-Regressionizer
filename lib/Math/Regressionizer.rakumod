@@ -99,8 +99,12 @@ method set-value($value --> ::?CLASS:D) { $!value = $value; self }
 #| Take the pipeline value
 method take-value() { $!value }
 
+#| Echo the pipeline
+method echo-value(:&with = &say --> ::?CLASS:D) { &with($!value); self }
+
+
 #| Echo the argument
-method echo($message --> ::?CLASS:D) { say $message; self }
+method echo($message, :&with = &say --> ::?CLASS:D) { &with($message); self }
 
 #==========================================================
 # Summarization
