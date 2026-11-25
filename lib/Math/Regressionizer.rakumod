@@ -517,7 +517,7 @@ method plot(
     self!require-quantiles;
 
     my @names = 'x', 'data', |%!regression-quantiles.keys.sort;
-    my @records = @!data.map(-> $row {
+    my @records = @!data.sort(*.head(*-1)).map(-> $row {
         my $x2 = $date-plot ?? DateTime.new(Instant.from-posix($row[0] - $date-offset)) !! $row[0];
         (@names Z=> [$x2, $row[1], |%!regression-quantiles.keys.sort.map({ %!regression-quantiles{$_}($row[0]) })]).Hash
     }).Array;
@@ -561,7 +561,7 @@ method outliers-plot(
     my &bottom-func = %!regression-quantiles.grep(*.key ne 'mean').sort(*.key.Num).head.value;
     my &top-func = %!regression-quantiles.grep(*.key ne 'mean').sort(*.key.Num).tail.value;
     # Get the bottom and top outliers
-    my @wide-data = @!data.kv.map(-> $i, @point {
+    my @wide-data = @!data.sort(*.head(*-1)).kv.map(-> $i, @point {
         %(
             x => $date-plot ?? DateTime.new(Instant.from-posix(@point.head - $date-offset)) !! @point.head,
             data => @point.tail,
