@@ -517,7 +517,10 @@ method plot(
     self!require-quantiles;
 
     my @names = 'x', 'data', |%!regression-quantiles.keys.sort;
-    my @records = @!data.sort(*.head(*-1)).map(-> $row {
+    # Since this a 2D plot it makes sense to optimize by possible reduction of the number of evaluations
+    # by taking the unique x-coordinates; those x-coordinates have to sorted in order to list-plot meaningful lines.
+    my @xs = @!data.map(*.head).sort.unique;
+    my @records = @xs.map(-> $row {
         my $x2 = $date-plot ?? DateTime.new(Instant.from-posix($row[0] - $date-offset)) !! $row[0];
         (@names Z=> [$x2, $row[1], |%!regression-quantiles.keys.sort.map({ %!regression-quantiles{$_}($row[0]) })]).Hash
     }).Array;
@@ -560,6 +563,7 @@ method outliers-plot(
 
     my &bottom-func = %!regression-quantiles.grep(*.key ne 'mean').sort(*.key.Num).head.value;
     my &top-func = %!regression-quantiles.grep(*.key ne 'mean').sort(*.key.Num).tail.value;
+
     # Get the bottom and top outliers
     my @wide-data = @!data.sort(*.head(*-1)).kv.map(-> $i, @point {
         %(
